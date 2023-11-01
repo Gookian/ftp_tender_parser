@@ -3,8 +3,8 @@ from date_range import DateRange
 
 class DataRangeParser:
     def parse(self, file_name: str) -> DateRange:
-        data_start = self._getDateInStrByIndex(file_name, -3)
-        data_end = self._getDateInStrByIndex(file_name, -2)
+        data_start = self._getDateInStrByIndex(file_name, 3)
+        data_end = self._getDateInStrByIndex(file_name, 4)
         
         return DateRange(data_start, data_end)
 
