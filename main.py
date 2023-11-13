@@ -1,6 +1,7 @@
 from ftp_file_downloader import FtpFileDownloader
 from tender_reader import TenderReader
 from datetime import date
+from scaner_periods.parser_structure_tender import StructureTenderParser
 
 import ftplib
 
@@ -20,6 +21,10 @@ while True:
 
     elif commandStr == "read":
         TenderReader.readFiles(directory_str)
+
+    elif commandStr == "parse":
+        structureTenderParser = StructureTenderParser()
+        structureTenderParser.parse(directory_str)
 
     elif commandStr == "exit":
         break
