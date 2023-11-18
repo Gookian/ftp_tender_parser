@@ -1,7 +1,8 @@
-from ftp_file_downloader import FtpFileDownloader
-from tender_reader import TenderReader
+from ftp.ftp_downloader import FtpDownloader
+from parsers.tender_parser import TenderParser
 from datetime import date
-from scaner_periods.parser_structure_tender import StructureTenderParser
+from parsers.structure_tender_parser import StructureTenderParser
+from repositories.repository import Repository
 
 import ftplib
 
@@ -9,24 +10,29 @@ source="/fcs_regions/Novosibirskaja_obl/notifications/"
 directory_str="./regions/Novosibirskaja_obl/"
 
 while True:
-    print("Доступные команды: \n1) download\n2) read\n3) exit")
-    commandStr = input("Введите комманду: ").lower()
+    print("Доступные команды: \n1) download\n2) parse\n3) parseStructure\n4) getJson\n5) exit")
+    command_str = input("Введите комманду: ").lower()
 
-    if commandStr == "download":
+    if command_str == "download":
         ftp = ftplib.FTP(host='95.167.245.94', timeout=10)
         ftp.login(user='free', passwd='free')
 
-        ftpDownloader = FtpFileDownloader(ftp, threadsCount=6)
-        ftpDownloader.downloadFiles(source, directory_str, date(2016, 1, 1), date(2023,10,24))
+        ftp_downloader = FtpDownloader(ftp, threadsCount=6)
+        ftp_downloader.download_zip(source, directory_str, date(2016, 1, 1), date(2023,11,15))
 
-    elif commandStr == "read":
-        TenderReader.readFiles(directory_str)
+    elif command_str == "parse":
+        tender_parser = TenderParser()
+        tender_parser.readFiles(directory_str)
 
-    elif commandStr == "parse":
-        structureTenderParser = StructureTenderParser()
-        structureTenderParser.parse(directory_str)
+    elif command_str == "parsestructure":
+        structure_tender_parser = StructureTenderParser()
+        structure_tender_parser.parse(directory_str)
 
-    elif commandStr == "exit":
+    elif command_str == "getjson":
+        repository = Repository()
+        repository.save_to_json()
+
+    elif command_str == "exit":
         break
 
     else:
