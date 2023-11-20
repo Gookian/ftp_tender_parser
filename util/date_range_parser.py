@@ -1,5 +1,5 @@
 from datetime import date
-from date_range import DateRange
+from util.date_range import DateRange
 
 class DataRangeParser:
     def parse(self, file_name: str) -> DateRange:
