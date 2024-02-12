@@ -58,7 +58,7 @@ class StructureTenderParser():
         self.ignore_tag = ["signature", "cryptoSigns", "printForm"]
         self.structures = {}
 
-    def parse_to_xml(self, element) -> list:
+    def parsing_from_xml(self, element) -> list:
         """Функция дастает из zip файлы xml и парсит эти файлы в структуру по промежуткам дат и типам закупок
 
         Parameters
@@ -88,7 +88,7 @@ class StructureTenderParser():
         for child in element:
             if child.tag.split('}')[1] not in self.ignore_tag:
                 # Рекурсивный вызов функции для каждого дочернего элемента
-                child_dict = self.parse_to_xml(child)
+                child_dict = self.parsing_from_xml(child)
 
                 if isArray:
                     current_dict.append({child.tag.split('}')[1]: child_dict})
@@ -170,12 +170,12 @@ class StructureTenderParser():
                                         "name": type_tender,
                                         "toDate": start.strftime("%d.%m.%Y"),
                                         "fromDate": end.strftime("%d.%m.%Y"),
-                                        "structure": self.parse_to_xml(element)
+                                        "structure": self.parsing_from_xml(element)
                                     }
                                     self.structures[type_tender_date_range] = json_structure
                                 else:
                                     old_structure = self.structures[type_tender_date_range]["structure"]
-                                    new_structure = self.parse_to_xml(element)
+                                    new_structure = self.parsing_from_xml(element)
                                     self.structures[type_tender_date_range]["structure"] = DictUtil.merging_dictionaries(old_structure, new_structure)
 
                             index += 1
