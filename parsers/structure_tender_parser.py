@@ -3,10 +3,11 @@ from xml.etree import ElementTree
 from util.date_range_parser import DataRangeParser
 from util.date_range import DateRange
 from datetime import date
-from pymongo import MongoClient
+from util.dict_util import DictUtil
 
 import os
 import re
+import json
 
 class PluralValidator():
     """Класс занимается проверкой слов на множественное число"""
@@ -57,7 +58,7 @@ class StructureTenderParser():
         self.ignore_tag = ["signature", "cryptoSigns", "printForm"]
         self.structures = {}
 
-    def parse_xml(self, element) -> dict:
+    def parse_to_xml(self, element) -> list:
         """Функция дастает из zip файлы xml и парсит эти файлы в структуру по промежуткам дат и типам закупок
 
         Parameters
@@ -70,49 +71,36 @@ class StructureTenderParser():
         Словарь с структурой тендера
         """
 
-        name = element.tag.split('}')[1]
+        # Инициализация пустого словаря для текущего элемента
+        isArray = False
+        if element.tag.split('}')[1][-1].lower() == 's':
+            current_dict = []
+            isArray = True
+        else:
+            current_dict = {}
 
-        if name not in self.ignore_tag:
+        # # Перебор атрибутов текущего элемента
+        # for key, value in element.attrib.items():
+        #     print(value)
+        #     current_dict[key] = value
 
-            is_array = False
-            tags_same_level = {}
-            type = "TAG"
-            text = None
-            if element.text is not None:
-                text = element.text.lstrip()
-                type = "VALUE"
+        # Рекурсивный перебор дочерних элементов
+        for child in element:
+            if child.tag.split('}')[1] not in self.ignore_tag:
+                # Рекурсивный вызов функции для каждого дочернего элемента
+                child_dict = self.parse_to_xml(child)
 
-            if text == "":
-                type = "TAG"
-
-            for child in element:
-                if child not in tags_same_level:
-                    tag = child.tag.split('}')[1]
-                    tags_same_level[tag] = ""
+                if isArray:
+                    current_dict.append({child.tag.split('}')[1]: child_dict})
                 else:
-                    is_array = True
-                    break
-                    
-            # Сомнительная проверка, пока что не нашла ни одного массива
-            if (self.plural_validator.is_validate(name) and is_array):
-                type = "ARRAY"
-                
-            result = {
-                "tag": name,
-                "count": 1,
-                "type": type,
-                "example": text,
-                "children": None
-            }
+                    # Объединение словарей текущего элемента и его дочерних элементов
+                    current_dict.setdefault(child.tag.split('}')[1], child_dict)
 
-            index = 0
-            for child in element:
-                index += 1
-                if index == 1:
-                    result["children"] = []
-                result["children"].append(self.parse_xml(child))
+        # Если у текущего элемента нет дочерних элементов, сохраняем его текст
+        if not current_dict:
+            current_dict = str(element.text)
 
-            return result
+        return current_dict
 
     def parse(self, directory: str) -> None:
         """Функция дастает из zip файлы xml и парсит эти файлы в структуру по промежуткам дат и типам закупок
@@ -126,11 +114,7 @@ class StructureTenderParser():
         ----------
         Нет
         """
-
         data_range_parser = DataRangeParser()
-        client = MongoClient("localhost", 27017, max_pool_size=50)
-        db = client.gpo_tender_db
-        collection = db.structures
         
         path = os.fsencode(directory)
         file_index = 0
@@ -156,8 +140,9 @@ class StructureTenderParser():
             else:
                 continue
 
-        for type, structure in self.structures.items():
-            collection.insert_one(structure)
+        with open("structures.txt", "w") as file:
+            json.dump(self.structures, file, indent=4)
+            file.close()
 
     def get_structure(self, date_range: DateRange, directory_str: str, filename: str, start: date, end: date) -> None:
         """Функция для получения тендеров по промежуткам дат"""
@@ -185,12 +170,12 @@ class StructureTenderParser():
                                         "name": type_tender,
                                         "toDate": start.strftime("%d.%m.%Y"),
                                         "fromDate": end.strftime("%d.%m.%Y"),
-                                        "structure": self.parse_xml(element)
+                                        "structure": self.parse_to_xml(element)
                                     }
                                     self.structures[type_tender_date_range] = json_structure
                                 else:
                                     old_structure = self.structures[type_tender_date_range]["structure"]
-                                    new_structure = self.parse_xml(element)
-                                    self.structures[type_tender_date_range]["structure"] = old_structure | new_structure
+                                    new_structure = self.parse_to_xml(element)
+                                    self.structures[type_tender_date_range]["structure"] = DictUtil.merging_dictionaries(old_structure, new_structure)
 
                             index += 1

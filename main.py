@@ -6,6 +6,7 @@ from repositories.repository import Repository
 from util.dict_util import DictUtil
 from data_name_column import result_compress_dict
 
+import pandas
 import ftplib
 import numpy as np
 
@@ -13,7 +14,7 @@ source="/fcs_regions/Novosibirskaja_obl/notifications/"
 directory_str="./regions/Novosibirskaja_obl/"
 
 while True:
-    print("Доступные команды: \n1) download\n2) parse\n3) parseStructure\n4) getJson\n5) exit")
+    print("Доступные команды: \n1) download\n2) parse\n3) parseStructure\n4) getJson\n5) parseJson\n6) exit")
     command_str = input("Введите комманду: ").lower()
 
     if command_str == "download":
@@ -22,6 +23,10 @@ while True:
 
         ftp_downloader = FtpDownloader(ftp, threadsCount=6)
         ftp_downloader.download_zip(source, directory_str, date(2016, 1, 1), date(2023,11,15))
+
+    elif command_str == "parsejson":
+        tender_parser = TenderParser()
+        tender_parser.parse_json(directory_str)
 
     elif command_str == "parse":
         names_dict = DictUtil.dictionary_compression(result_compress_dict)
@@ -52,6 +57,10 @@ while True:
     elif command_str == "getjson":
         repository = Repository()
         repository.save_to_json()
+
+    elif command_str == "jsontodf":
+        df = pandas.read_json('data.json', encoding="utf-8")
+        print(df)
 
     elif command_str == "exit":
         break

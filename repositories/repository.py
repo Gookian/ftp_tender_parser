@@ -31,10 +31,13 @@ class Repository():
     def get_notifications_list(self) -> list:
         result = []
         index = 0
-        for item in self.notifications.find():
+        notifications = self.notifications.find()
+
+        for item in notifications:
             index += 1
             del item["_id"]
             result.append(item)
             if index % 200 == 0:
-                print(f"{index / 1213166 * 100} %")
+                print(f"{index / len(notifications) * 100} %")
+
         return result
