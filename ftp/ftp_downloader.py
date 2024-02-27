@@ -9,12 +9,10 @@ import re
 class FtpDownloader():
     """Класс отвечает за скачивание файлов с ftp сервера"""
 
-    def __init__(self, ftp: FTP, threads_count: int) -> None:
+    def __init__(self, ftp: FTP) -> None:
         self.data_range_parser = DataRangeParser()
         self.work_timer = WorkTimer()
         self.ftp = ftp
-        self.threads_count = threads_count
-
     
     def download_zip(self, source: str, path: str, date_start: date, date_end: date) -> None:
         """Функция скачивает zip файлы с ftp сервера и сохраняет их на диске
@@ -60,8 +58,8 @@ class FtpDownloader():
                 
                 self.work_timer.calculate_time((file_count - file_skip_count), len(directory) - file_skip_count)
 
-                print('\033[F\033[K', end='')
-                print(f'Скачивание фвйлов {int(file_count / len(directory) * 100)}%\t|\tВремя скачивания {self.work_timer.days} дней {self.work_timer.hours} часов {self.work_timer.minutes} минут {self.work_timer.seconds} секунд')
+                print('\033[F\033[K\n', end='')
+                print(f'Скачивание файлов {int(file_count / len(directory) * 100)}%\t|\tВремя скачивания {self.work_timer.days} дней {self.work_timer.hours} часов {self.work_timer.minutes} минут {self.work_timer.seconds} секунд')
 
 
     def _try_create_directory(self, path: str) -> None:
